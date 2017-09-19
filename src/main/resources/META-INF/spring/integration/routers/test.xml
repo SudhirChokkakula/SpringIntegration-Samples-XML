@@ -1,0 +1,63 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:int-file="http://www.springframework.org/schema/integration/file"
+	xmlns:int-stream="http://www.springframework.org/schema/integration/stream"
+	xmlns:int-xml="http://www.springframework.org/schema/integration/xml"
+	xmlns:int-kafka="http://www.springframework.org/schema/integration/kafka"
+	xmlns:task="http://www.springframework.org/schema/task"
+	xsi:schemaLocation="http://www.springframework.org/schema/integration/stream http://www.springframework.org/schema/integration/stream/spring-integration-stream-4.0.xsd
+		http://www.springframework.org/schema/integration/xml http://www.springframework.org/schema/integration/xml/spring-integration-xml-4.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/integration/file http://www.springframework.org/schema/integration/file/spring-integration-file-4.0.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration-4.0.xsd
+		http://www.springframework.org/schema/integration/kafka http://www.springframework.org/schema/integration/kafka/spring-integration-kafka-1.0.xsd
+		http://www.springframework.org/schema/task http://www.springframework.org/schema/task/spring-task.xsd">
+
+
+	<int-stream:stdin-channel-adapter channel="inputToKafka"
+		id="inbound-stream-adapter">
+		<int:poller id="poller" fixed-delay="5000"></int:poller>
+	</int-stream:stdin-channel-adapter>
+	
+	<int:channel id="inputToKafka"></int:channel>
+	
+	<int-kafka:outbound-channel-adapter id="kafkaOutboundChannelAdapter" kafka-producer-context-ref="kafka-producer-context" 
+	channel="inputToKafka">
+	</int-kafka:outbound-channel-adapter>
+	
+	<task:executor id="taskExecutor" pool-size="5" keep-alive="120" queue-capacity="500"/>
+	
+	<int-kafka:producer-context id="kafka-producer-context">
+	<int-kafka:producer-configurations>
+		<int-kafka:producer-configuration topic="topicSI" broker-list="127.0.0.1:9092" 
+		compression-codec="default" key-class-type="java.lang.String" value-class-type="java.lang.String"
+		 key-encoder="encoder" value-encoder="encoder"/>
+	</int-kafka:producer-configurations>
+	</int-kafka:producer-context>
+	
+	<int-kafka:inbound-channel-adapter id="kafkaInboundChannelAdapter" kafka-consumer-context-ref="consumerContext" channel="outputFromKafka">
+	<int:poller fixed-delay="100" max-messages-per-poll="5"></int:poller>
+	</int-kafka:inbound-channel-adapter>
+	
+	<int-kafka:zookeeper-connect id="zookeeperConnect" zk-connect="127.0.0.1:2181"/>
+	
+	<int-kafka:consumer-context zookeeper-connect="zookeeperConnect" id="consumerContext">
+		<int-kafka:consumer-configurations>
+			<int-kafka:consumer-configuration group-id="defaultGrp">
+			<int-kafka:topic id="topicSI" streams="1"/>
+			</int-kafka:consumer-configuration>
+		</int-kafka:consumer-configurations>
+	</int-kafka:consumer-context>
+	
+	<int:channel id="outputFromKafka"></int:channel>
+	
+	
+	<int-stream:stdout-channel-adapter channel="outputFromKafka"
+		id="outbound-stream-adapter" />
+		
+	<!-- <bean id="encoder" class="org.springframework.integration.kafka.serializer.avro.AvroReflectDatumBackedKafkaEncoder">
+		<constructor-arg value="java.lang.String" />
+	</bean> -->
+</beans>

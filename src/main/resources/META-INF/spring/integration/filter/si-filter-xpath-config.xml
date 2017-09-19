@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:int="http://www.springframework.org/schema/integration"
+	xmlns:int-file="http://www.springframework.org/schema/integration/file"
+	xmlns:int-xml="http://www.springframework.org/schema/integration/xml"
+	xsi:schemaLocation="http://www.springframework.org/schema/beans
+			http://www.springframework.org/schema/beans/spring-beans.xsd
+			http://www.springframework.org/schema/integration
+			http://www.springframework.org/schema/integration/spring-integration.xsd
+			http://www.springframework.org/schema/integration/file
+			http://www.springframework.org/schema/integration/file/spring-integration-file.xsd 
+			http://www.springframework.org/schema/integration/xml 
+			http://www.springframework.org/schema/integration/xml/spring-integration-xml-4.3.xsd">
+			
+<int:channel id="inputChannel"/>
+
+<int:channel id="outputChannel"/>
+
+<int:channel id="xml-inboundChannel"/>
+
+<int-file:inbound-channel-adapter directory="/home/sudhirc/inbound" channel="inputChannel" id="producer-channel-adapter" prevent-duplicates="true">
+	<int:poller id="poller" fixed-delay="5000"/>
+</int-file:inbound-channel-adapter>
+
+<int-file:file-to-string-transformer id="file-2-string" input-channel="inputChannel" output-channel="xml-inboundChannel" charset="UTF-8"/>
+
+<int-xml:xpath-filter id="xpathFilter" input-channel="xml-inboundChannel" output-channel="outputChannel" xpath-expression-ref="xpathRefrence"></int-xml:xpath-filter>
+
+<int-xml:xpath-expression id="xpathRefrence" expression="//country='USA'"></int-xml:xpath-expression>
+
+<int-file:outbound-channel-adapter directory="/home/sudhirc/outbound" channel="outputChannel" id="consumer-channel-adapter">
+</int-file:outbound-channel-adapter>
+
+	
+	
+	
+</beans>

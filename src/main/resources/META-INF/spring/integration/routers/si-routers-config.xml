@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:int-stream="http://www.springframework.org/schema/integration/stream"
+	xmlns:int-xml="http://www.springframework.org/schema/integration/xml"
+	xmlns:int-file="http://www.springframework.org/schema/integration/file"
+	xmlns:int="http://www.springframework.org/schema/integration"
+	xsi:schemaLocation="http://www.springframework.org/schema/integration/stream http://www.springframework.org/schema/integration/stream/spring-integration-stream-4.0.xsd
+		http://www.springframework.org/schema/integration/xml http://www.springframework.org/schema/integration/xml/spring-integration-xml-4.0.xsd
+		http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/integration/file http://www.springframework.org/schema/integration/file/spring-integration-file-4.0.xsd
+		http://www.springframework.org/schema/integration http://www.springframework.org/schema/integration/spring-integration-4.0.xsd">
+
+
+	<int-file:inbound-channel-adapter directory="/home/sudhirc/inbound"
+		id="producer-file-adapter" channel="inputChannel">
+		<int:poller id="poller" fixed-delay="5000"></int:poller>
+	</int-file:inbound-channel-adapter>
+	<int:channel id="inputChannel"></int:channel>
+	
+	<int-file:file-to-string-transformer id="file-2-string-transformer"
+		input-channel="inputChannel" output-channel="xml-inbound-channel" />
+	<int:channel id="xml-inbound-channel"></int:channel>
+	<int-xml:xpath-router id="xpath-router"
+		input-channel="xml-inbound-channel">
+		<int-xml:xpath-expression expression="/shiporder/shipto/country"></int-xml:xpath-expression>
+		<int-xml:mapping value="Norway" channel="norwayChannel"/>
+		<int-xml:mapping value="USA" channel="usaChannel"/>
+	</int-xml:xpath-router>
+	<int:channel id="norwayChannel"></int:channel>
+	<int:channel id="usaChannel"></int:channel>
+	<int-file:outbound-channel-adapter id="norway-consumer-adapter"
+		channel="norwayChannel" directory="/home/sudhirc/outbound/norway"
+		auto-create-directory="true">
+	</int-file:outbound-channel-adapter>
+	<int-file:outbound-channel-adapter id="usa-channel-adapter"
+		auto-create-directory="true" channel="usaChannel"
+		directory="/home/sudhirc/outbound/usa">
+	</int-file:outbound-channel-adapter>
+	
+	
+</beans>
